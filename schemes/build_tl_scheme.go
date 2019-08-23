@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type nametype struct {
@@ -24,15 +25,16 @@ type constuctor struct {
 func normalize(s string) string {
 	x := []byte(s)
 	for i, r := range x {
-		if r == '.' {
-			x[i] = '_'
+		if r == '.' || r == '_' {
+			x[i] = ' '
 		}
 	}
 	y := string(x)
 	if y == "type" {
 		return "_type"
 	}
-	return y
+	y = strings.Title(y)
+	return strings.Replace(y, " ", "", -1)
 }
 
 func main() {
@@ -84,7 +86,7 @@ func main() {
 			params := data["params"].([]interface{})
 			for _, params := range params {
 				params := params.(map[string]interface{})
-				_params = append(_params, nametype{normalize(params["name"].(string)), normalize(params["type"].(string))})
+				_params = append(_params, nametype{normalize(params["name"].(string)), params["type"].(string)})
 			}
 
 			// type
@@ -104,14 +106,14 @@ func main() {
 	fmt.Print("package mtproto\nimport \"fmt\"\nconst (\n")
 	for _, key := range _order {
 		c := _cons[key]
-		fmt.Printf("crc_%s = %s\n", c.predicate, c.id)
+		fmt.Printf("Crc%s = %s\n", c.predicate, c.id)
 	}
 	fmt.Print(")\n\n")
 
 	// type structs
 	for _, key := range _order {
 		c := _cons[key]
-		fmt.Printf("type TL_%s struct {\n", c.predicate)
+		fmt.Printf("type TL%s struct {\n", c.predicate)
 		for _, t := range c.params {
 			fmt.Printf("%s\t", t.name)
 			switch t._type {
@@ -152,9 +154,9 @@ func main() {
 	// encode funcs
 	for _, key := range _order {
 		c := _cons[key]
-		fmt.Printf("func (e TL_%s) encode() []byte {\n", c.predicate)
+		fmt.Printf("func (e TL%s) encode() []byte {\n", c.predicate)
 		fmt.Print("x := NewEncodeBuf(512)\n")
-		fmt.Printf("x.UInt(crc_%s)\n", c.predicate)
+		fmt.Printf("x.UInt(Crc%s)\n", c.predicate)
 		for _, t := range c.params {
 			switch t._type {
 			case "int":
@@ -199,8 +201,8 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 
 	for _, key := range _order {
 		c := _cons[key]
-		fmt.Printf("case crc_%s:\n", c.predicate)
-		fmt.Printf("r = TL_%s{\n", c.predicate)
+		fmt.Printf("case Crc%s:\n", c.predicate)
+		fmt.Printf("r = TL%s{\n", c.predicate)
 		for _, t := range c.params {
 			switch t._type {
 			case "int":
@@ -238,7 +240,7 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 
 	fmt.Println(`
 	default:
-		m.err = fmt.Errorf("Unknown constructor: \u002508x", constructor)
+		m.err = fmt.Errorf("unknown constructor: \u002508x", constructor)
 		return nil
 
 	}

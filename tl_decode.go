@@ -154,7 +154,7 @@ func (m *DecodeBuf) VectorInt() []int32 {
 	if m.err != nil {
 		return nil
 	}
-	if constructor != crc_vector {
+	if constructor != CrcVector {
 		m.err = fmt.Errorf("DecodeVectorInt: Wrong constructor (0x%08x)", constructor)
 		return nil
 	}
@@ -184,7 +184,7 @@ func (m *DecodeBuf) VectorLong() []int64 {
 	if m.err != nil {
 		return nil
 	}
-	if constructor != crc_vector {
+	if constructor != CrcVector {
 		m.err = fmt.Errorf("DecodeVectorLong: Wrong constructor (0x%08x)", constructor)
 		return nil
 	}
@@ -214,7 +214,7 @@ func (m *DecodeBuf) VectorString() []string {
 	if m.err != nil {
 		return nil
 	}
-	if constructor != crc_vector {
+	if constructor != CrcVector {
 		m.err = fmt.Errorf("DecodeVectorString: Wrong constructor (0x%08x)", constructor)
 		return nil
 	}
@@ -245,9 +245,9 @@ func (m *DecodeBuf) Bool() bool {
 		return false
 	}
 	switch constructor {
-	case crc_boolFalse:
+	case CrcBoolFalse:
 		return false
-	case crc_boolTrue:
+	case CrcBoolTrue:
 		return true
 	}
 	return false
@@ -258,7 +258,7 @@ func (m *DecodeBuf) Vector() []TL {
 	if m.err != nil {
 		return nil
 	}
-	if constructor != crc_vector {
+	if constructor != CrcVector {
 		m.err = fmt.Errorf("DecodeVector: Wrong constructor (0x%08x)", constructor)
 		return nil
 	}
@@ -294,57 +294,57 @@ func (m *DecodeBuf) Object() (r TL) {
 
 	switch constructor {
 
-	case crc_resPQ:
-		r = TL_resPQ{m.Bytes(16), m.Bytes(16), m.BigInt(), m.VectorLong()}
+	case CrcResPQ:
+		r = TlRespq{m.Bytes(16), m.Bytes(16), m.BigInt(), m.VectorLong()}
 
-	case crc_server_DH_params_ok:
-		r = TL_server_DH_params_ok{m.Bytes(16), m.Bytes(16), m.StringBytes()}
+	case CrcServerDHParamsOk:
+		r = TlServerDHParamsOk{m.Bytes(16), m.Bytes(16), m.StringBytes()}
 
-	case crc_server_DH_inner_data:
-		r = TL_server_DH_inner_data{
+	case CrcServerDHInnerData:
+		r = TlServerDHInnerData{
 			m.Bytes(16), m.Bytes(16), m.Int(),
 			m.BigInt(), m.BigInt(), m.Int(),
 		}
 
-	case crc_dh_gen_ok:
-		r = TL_dh_gen_ok{m.Bytes(16), m.Bytes(16), m.Bytes(16)}
+	case CrcDHGenOk:
+		r = TlDHGenOk{m.Bytes(16), m.Bytes(16), m.Bytes(16)}
 
-	case crc_ping:
-		r = TL_ping{m.Long()}
+	case CrcPing:
+		r = TlPing{m.Long()}
 
-	case crc_pong:
-		r = TL_pong{m.Long(), m.Long()}
+	case CrcPong:
+		r = TlPong{m.Long(), m.Long()}
 
-	case crc_msg_container:
+	case CrcMsgContainer:
 		size := m.Int()
-		arr := make([]TL_MT_message, size)
+		arr := make([]TlMtMessage, size)
 		for i := int32(0); i < size; i++ {
-			arr[i] = TL_MT_message{m.Long(), m.Int(), m.Int(), m.Object()}
+			arr[i] = TlMtMessage{m.Long(), m.Int(), m.Int(), m.Object()}
 			if m.err != nil {
 				return nil
 			}
 		}
-		r = TL_msg_container{arr}
+		r = TlMsgContainer{arr}
 
-	case crc_rpc_result:
-		r = TL_rpc_result{m.Long(), m.Object()}
+	case CrcRpcResult:
+		r = TlRpcResult{m.Long(), m.Object()}
 
-	case crc_rpc_error:
-		r = TL_rpc_error{m.Int(), m.String()}
+	case CrcRpcError:
+		r = TlRpcError{m.Int(), m.String()}
 
-	case crc_new_session_created:
-		r = TL_new_session_created{m.Long(), m.Long(), m.Bytes(8)}
+	case CrcNewSessionCreated:
+		r = TlNewSessionCreated{m.Long(), m.Long(), m.Bytes(8)}
 
-	case crc_bad_server_salt:
-		r = TL_bad_server_salt{m.Long(), m.Int(), m.Int(), m.Bytes(8)}
+	case CrcBadServerSalt:
+		r = TlBadServerSalt{m.Long(), m.Int(), m.Int(), m.Bytes(8)}
 
-	case crc_bad_msg_notification:
-		r = TL_crc_bad_msg_notification{m.Long(), m.Int(), m.Int()}
+	case CrcBadMsgNotification:
+		r = TlCrcBadMsgNotification{m.Long(), m.Int(), m.Int()}
 
-	case crc_msgs_ack:
-		r = TL_msgs_ack{m.VectorLong()}
+	case CrcMsgsAck:
+		r = TlMsgsAck{m.VectorLong()}
 
-	case crc_gzip_packed:
+	case CrcGzipPacked:
 		obj := make([]byte, 0, 4096)
 
 		var buf bytes.Buffer
@@ -374,11 +374,11 @@ func (m *DecodeBuf) Object() (r TL) {
 	return
 }
 
-func (d *DecodeBuf) dump() {
-	fmt.Println(hex.Dump(d.buf[d.off:d.size]))
+func (m *DecodeBuf) dump() {
+	fmt.Println(hex.Dump(m.buf[m.off:m.size]))
 }
 
 func toBool(x TL) bool {
-	_, ok := x.(TL_boolTrue)
+	_, ok := x.(TLBoolTrue)
 	return ok
 }

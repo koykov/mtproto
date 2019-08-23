@@ -8,114 +8,114 @@ type TL interface {
 	encode() []byte
 }
 
-type TL_msg_container struct {
-	items []TL_MT_message
+type TlMsgContainer struct {
+	Items []TlMtMessage
 }
 
-type TL_MT_message struct {
-	msg_id int64
-	seq_no int32
-	size   int32
-	data   interface{}
+type TlMtMessage struct {
+	MsgId int64
+	SeqNo int32
+	Size  int32
+	Data  interface{}
 }
 
-type TL_req_pq struct {
-	nonce []byte
+type TlReqPq struct {
+	Nonce []byte
 }
 
-type TL_p_q_inner_data struct {
-	pq           *big.Int
-	p            *big.Int
-	q            *big.Int
-	nonce        []byte
-	server_nonce []byte
-	new_nonce    []byte
+type TlPQInnerData struct {
+	pq          *big.Int
+	p           *big.Int
+	q           *big.Int
+	nonce       []byte
+	serverNonce []byte
+	newNonce    []byte
 }
-type TL_req_DH_params struct {
-	nonce        []byte
-	server_nonce []byte
-	p            *big.Int
-	q            *big.Int
-	fp           uint64
-	encdata      []byte
+type TlReqDHParams struct {
+	nonce       []byte
+	serverNonce []byte
+	p           *big.Int
+	q           *big.Int
+	fp          uint64
+	encData     []byte
 }
-type TL_client_DH_inner_data struct {
-	nonce        []byte
-	server_nonce []byte
-	retry        int64
-	g_b          *big.Int
+type TlClientDHInnerData struct {
+	nonce       []byte
+	serverNonce []byte
+	retry       int64
+	gB          *big.Int
 }
-type TL_set_client_DH_params struct {
-	nonce        []byte
-	server_nonce []byte
-	encdata      []byte
+type TlSetClientDHParams struct {
+	nonce       []byte
+	serverNonce []byte
+	encData     []byte
 }
-type TL_resPQ struct {
+type TlRespq struct {
 	nonce        []byte
-	server_nonce []byte
+	serverNonce  []byte
 	pq           *big.Int
 	fingerprints []int64
 }
 
-type TL_server_DH_params_ok struct {
-	nonce            []byte
-	server_nonce     []byte
-	encrypted_answer []byte
+type TlServerDHParamsOk struct {
+	nonce           []byte
+	serverNonce     []byte
+	encryptedAnswer []byte
 }
 
-type TL_server_DH_inner_data struct {
-	nonce        []byte
-	server_nonce []byte
-	g            int32
-	dh_prime     *big.Int
-	g_a          *big.Int
-	server_time  int32
+type TlServerDHInnerData struct {
+	nonce       []byte
+	serverNonce []byte
+	g           int32
+	dhPrime     *big.Int
+	gA          *big.Int
+	serverTime  int32
 }
 
-type TL_new_session_created struct {
-	first_msg_id int64
-	unique_id    int64
-	server_salt  []byte
+type TlNewSessionCreated struct {
+	firstMsgId int64
+	uniqueId   int64
+	serverSalt []byte
 }
 
-type TL_bad_server_salt struct {
-	bad_msg_id      int64
-	bad_msg_seqno   int32
-	error_code      int32
-	new_server_salt []byte
+type TlBadServerSalt struct {
+	badMsgId      int64
+	badMsgSeqno   int32
+	errorCode     int32
+	newServerSalt []byte
 }
 
-type TL_crc_bad_msg_notification struct {
-	bad_msg_id    int64
-	bad_msg_seqno int32
-	error_code    int32
+type TlCrcBadMsgNotification struct {
+	badMsgId    int64
+	badMsgSeqno int32
+	errorCode   int32
 }
 
-type TL_msgs_ack struct {
+type TlMsgsAck struct {
 	msgIds []int64
 }
 
-type TL_rpc_result struct {
-	req_msg_id int64
-	obj        interface{}
+type TlRpcResult struct {
+	reqMsgId int64
+	obj      interface{}
 }
 
-type TL_rpc_error struct {
-	error_code    int32
-	error_message string
+type TlRpcError struct {
+	errorCode    int32
+	errorMessage string
 }
 
-type TL_dh_gen_ok struct {
-	nonce           []byte
-	server_nonce    []byte
-	new_nonce_hash1 []byte
+type TlDHGenOk struct {
+	nonce         []byte
+	serverNonce   []byte
+	newNonceHash1 []byte
 }
 
-type TL_ping struct {
-	ping_id int64
+type TlPing struct {
+	pingId int64
 }
 
-type TL_pong struct {
-	msg_id  int64
-	ping_id int64
+type TlPong struct {
+	msgId  int64
+	pingId int64
 }

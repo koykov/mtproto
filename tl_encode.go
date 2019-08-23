@@ -82,7 +82,7 @@ func (e *EncodeBuf) Bytes(s []byte) {
 
 func (e *EncodeBuf) VectorInt(v []int32) {
 	x := make([]byte, 4+4+len(v)*4)
-	binary.LittleEndian.PutUint32(x, crc_vector)
+	binary.LittleEndian.PutUint32(x, CrcVector)
 	binary.LittleEndian.PutUint32(x[4:], uint32(len(v)))
 	i := 8
 	for _, v := range v {
@@ -94,7 +94,7 @@ func (e *EncodeBuf) VectorInt(v []int32) {
 
 func (e *EncodeBuf) VectorLong(v []int64) {
 	x := make([]byte, 4+4+len(v)*8)
-	binary.LittleEndian.PutUint32(x, crc_vector)
+	binary.LittleEndian.PutUint32(x, CrcVector)
 	binary.LittleEndian.PutUint32(x[4:], uint32(len(v)))
 	i := 8
 	for _, v := range v {
@@ -106,7 +106,7 @@ func (e *EncodeBuf) VectorLong(v []int64) {
 
 func (e *EncodeBuf) VectorString(v []string) {
 	x := make([]byte, 8)
-	binary.LittleEndian.PutUint32(x, crc_vector)
+	binary.LittleEndian.PutUint32(x, CrcVector)
 	binary.LittleEndian.PutUint32(x[4:], uint32(len(v)))
 	e.buf = append(e.buf, x...)
 	for _, v := range v {
@@ -116,7 +116,7 @@ func (e *EncodeBuf) VectorString(v []string) {
 
 func (e *EncodeBuf) Vector(v []TL) {
 	x := make([]byte, 8)
-	binary.LittleEndian.PutUint32(x, crc_vector)
+	binary.LittleEndian.PutUint32(x, CrcVector)
 	binary.LittleEndian.PutUint32(x[4:], uint32(len(v)))
 	e.buf = append(e.buf, x...)
 	for _, v := range v {
@@ -124,85 +124,85 @@ func (e *EncodeBuf) Vector(v []TL) {
 	}
 }
 
-func (e TL_msg_container) encode() []byte            { return nil }
-func (e TL_resPQ) encode() []byte                    { return nil }
-func (e TL_server_DH_params_ok) encode() []byte      { return nil }
-func (e TL_server_DH_inner_data) encode() []byte     { return nil }
-func (e TL_dh_gen_ok) encode() []byte                { return nil }
-func (e TL_rpc_result) encode() []byte               { return nil }
-func (e TL_rpc_error) encode() []byte                { return nil }
-func (e TL_new_session_created) encode() []byte      { return nil }
-func (e TL_bad_server_salt) encode() []byte          { return nil }
-func (e TL_crc_bad_msg_notification) encode() []byte { return nil }
+func (e TlMsgContainer) encode() []byte          { return nil }
+func (e TlRespq) encode() []byte                 { return nil }
+func (e TlServerDHParamsOk) encode() []byte      { return nil }
+func (e TlServerDHInnerData) encode() []byte     { return nil }
+func (e TlDHGenOk) encode() []byte               { return nil }
+func (e TlRpcResult) encode() []byte             { return nil }
+func (e TlRpcError) encode() []byte              { return nil }
+func (e TlNewSessionCreated) encode() []byte     { return nil }
+func (e TlBadServerSalt) encode() []byte         { return nil }
+func (e TlCrcBadMsgNotification) encode() []byte { return nil }
 
-func (e TL_req_pq) encode() []byte {
+func (e TlReqPq) encode() []byte {
 	x := NewEncodeBuf(20)
-	x.UInt(crc_req_pq)
-	x.Bytes(e.nonce)
+	x.UInt(CrcReqPq)
+	x.Bytes(e.Nonce)
 	return x.buf
 }
 
-func (e TL_p_q_inner_data) encode() []byte {
+func (e TlPQInnerData) encode() []byte {
 	x := NewEncodeBuf(256)
-	x.UInt(crc_p_q_inner_data)
+	x.UInt(CrcPQInnerData)
 	x.BigInt(e.pq)
 	x.BigInt(e.p)
 	x.BigInt(e.q)
 	x.Bytes(e.nonce)
-	x.Bytes(e.server_nonce)
-	x.Bytes(e.new_nonce)
+	x.Bytes(e.serverNonce)
+	x.Bytes(e.newNonce)
 	return x.buf
 }
 
-func (e TL_req_DH_params) encode() []byte {
+func (e TlReqDHParams) encode() []byte {
 	x := NewEncodeBuf(512)
-	x.UInt(crc_req_DH_params)
+	x.UInt(CrcReqDHParams)
 	x.Bytes(e.nonce)
-	x.Bytes(e.server_nonce)
+	x.Bytes(e.serverNonce)
 	x.BigInt(e.p)
 	x.BigInt(e.q)
 	x.Long(int64(e.fp))
-	x.StringBytes(e.encdata)
+	x.StringBytes(e.encData)
 	return x.buf
 }
 
-func (e TL_client_DH_inner_data) encode() []byte {
+func (e TlClientDHInnerData) encode() []byte {
 	x := NewEncodeBuf(512)
-	x.UInt(crc_client_DH_inner_data)
+	x.UInt(CrcClientDHInnerData)
 	x.Bytes(e.nonce)
-	x.Bytes(e.server_nonce)
+	x.Bytes(e.serverNonce)
 	x.Long(e.retry)
-	x.BigInt(e.g_b)
+	x.BigInt(e.gB)
 	return x.buf
 }
 
-func (e TL_set_client_DH_params) encode() []byte {
+func (e TlSetClientDHParams) encode() []byte {
 	x := NewEncodeBuf(256)
-	x.UInt(crc_set_client_DH_params)
+	x.UInt(CrcSetClientDHParams)
 	x.Bytes(e.nonce)
-	x.Bytes(e.server_nonce)
-	x.StringBytes(e.encdata)
+	x.Bytes(e.serverNonce)
+	x.StringBytes(e.encData)
 	return x.buf
 }
 
-func (e TL_ping) encode() []byte {
+func (e TlPing) encode() []byte {
 	x := NewEncodeBuf(32)
-	x.UInt(crc_ping)
-	x.Long(e.ping_id)
+	x.UInt(CrcPing)
+	x.Long(e.pingId)
 	return x.buf
 }
 
-func (e TL_pong) encode() []byte {
+func (e TlPong) encode() []byte {
 	x := NewEncodeBuf(32)
-	x.UInt(crc_pong)
-	x.Long(e.msg_id)
-	x.Long(e.ping_id)
+	x.UInt(CrcPong)
+	x.Long(e.msgId)
+	x.Long(e.pingId)
 	return x.buf
 }
 
-func (e TL_msgs_ack) encode() []byte {
+func (e TlMsgsAck) encode() []byte {
 	x := NewEncodeBuf(64)
-	x.UInt(crc_msgs_ack)
+	x.UInt(CrcMsgsAck)
 	x.VectorLong(e.msgIds)
 	return x.buf
 }

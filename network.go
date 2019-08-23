@@ -19,7 +19,7 @@ func (m *MTProto) sendPacket(msg TL, resp chan TL) error {
 	if m.encrypted {
 		needAck := true
 		switch msg.(type) {
-		case TL_ping, TL_msgs_ack:
+		case TlPing, TlMsgsAck:
 			needAck = false
 		}
 		z := NewEncodeBuf(256)
@@ -40,7 +40,7 @@ func (m *MTProto) sendPacket(msg TL, resp chan TL) error {
 
 		y := make([]byte, len(z.buf)+((16-(len(obj)%16))&15))
 		copy(y, z.buf)
-		encryptedData, err := doAES256IGEencrypt(y, aesKey, aesIV)
+		encryptedData, err := doAES256IGEEncrypt(y, aesKey, aesIV)
 		if err != nil {
 			return err
 		}
@@ -132,7 +132,7 @@ func (m *MTProto) read(stop <-chan struct{}) (interface{}, error) {
 	}
 
 	if size == 4 {
-		return nil, fmt.Errorf("Server response error: %d", int32(binary.LittleEndian.Uint32(buf)))
+		return nil, fmt.Errorf("server response error: %d", int32(binary.LittleEndian.Uint32(buf)))
 	}
 
 	dbuf := NewDecodeBuf(buf)
@@ -142,7 +142,7 @@ func (m *MTProto) read(stop <-chan struct{}) (interface{}, error) {
 		m.msgId = dbuf.Long()
 		messageLen := dbuf.Int()
 		if int(messageLen) != dbuf.size-20 {
-			return nil, fmt.Errorf("Message len: %d (need %d)", messageLen, dbuf.size-20)
+			return nil, fmt.Errorf("message len: %d (need %d)", messageLen, dbuf.size-20)
 		}
 		m.seqNo = 0
 
@@ -155,7 +155,7 @@ func (m *MTProto) read(stop <-chan struct{}) (interface{}, error) {
 		msgKey := dbuf.Bytes(16)
 		encryptedData := dbuf.Bytes(dbuf.size - 24)
 		aesKey, aesIV := generateAES(msgKey, m.authKey, true)
-		x, err := doAES256IGEdecrypt(encryptedData, aesKey, aesIV)
+		x, err := doAES256IGEDecrypt(encryptedData, aesKey, aesIV)
 		if err != nil {
 			return nil, err
 		}
@@ -166,10 +166,10 @@ func (m *MTProto) read(stop <-chan struct{}) (interface{}, error) {
 		m.seqNo = dbuf.Int()
 		messageLen := dbuf.Int()
 		if int(messageLen) > dbuf.size-32 {
-			return nil, fmt.Errorf("Message len: %d (need less than %d)", messageLen, dbuf.size-32)
+			return nil, fmt.Errorf("message len: %d (need less than %d)", messageLen, dbuf.size-32)
 		}
 		if !bytes.Equal(sha1(dbuf.buf[0 : 32+messageLen])[4:20], msgKey) {
-			return nil, errors.New("Wrong msg_key")
+			return nil, errors.New("wrong msg_key")
 		}
 
 		data = dbuf.Object()
@@ -180,7 +180,7 @@ func (m *MTProto) read(stop <-chan struct{}) (interface{}, error) {
 	}
 	mod := m.msgId & 3
 	if mod != 1 && mod != 3 {
-		return nil, fmt.Errorf("Wrong bits of message_id: %d", mod)
+		return nil, fmt.Errorf("wrong bits of message_id: %d", mod)
 	}
 
 	return data, nil
@@ -193,7 +193,7 @@ func (m *MTProto) makeAuthKey() error {
 
 	// (send) req_pq
 	nonceFirst := GenerateNonce(16)
-	err = m.sendPacket(TL_req_pq{nonceFirst}, nil)
+	err = m.sendPacket(TlReqPq{nonceFirst}, nil)
 	if err != nil {
 		return err
 	}
@@ -203,29 +203,29 @@ func (m *MTProto) makeAuthKey() error {
 	if err != nil {
 		return err
 	}
-	res, ok := data.(TL_resPQ)
+	res, ok := data.(TlRespq)
 	if !ok {
-		return errors.New("Handshake: Need resPQ")
+		return errors.New("handshake: need resPQ")
 	}
 	if !bytes.Equal(nonceFirst, res.nonce) {
-		return errors.New("Handshake: Wrong nonce")
+		return errors.New("handshake: wrong nonce")
 	}
 	found := false
 	for _, b := range res.fingerprints {
-		if uint64(b) == telegramPublicKey_FP {
+		if uint64(b) == telegramPublicKeyFP {
 			found = true
 			break
 		}
 	}
 	if !found {
-		return errors.New("Handshake: No fingerprint")
+		return errors.New("handshake: no fingerprint")
 	}
 
 	// (encoding) p_q_inner_data
 	p, q := splitPQ(res.pq)
 	nonceSecond := GenerateNonce(32)
-	nonceServer := res.server_nonce
-	innerData1 := (TL_p_q_inner_data{res.pq, p, q, nonceFirst, nonceServer, nonceSecond}).encode()
+	nonceServer := res.serverNonce
+	innerData1 := (TlPQInnerData{res.pq, p, q, nonceFirst, nonceServer, nonceSecond}).encode()
 
 	x = make([]byte, 255)
 	copy(x[0:], sha1(innerData1))
@@ -233,7 +233,7 @@ func (m *MTProto) makeAuthKey() error {
 	encryptedData1 := doRSAencrypt(x)
 
 	// (send) req_DH_params
-	err = m.sendPacket(TL_req_DH_params{nonceFirst, nonceServer, p, q, telegramPublicKey_FP, encryptedData1}, nil)
+	err = m.sendPacket(TlReqDHParams{nonceFirst, nonceServer, p, q, telegramPublicKeyFP, encryptedData1}, nil)
 	if err != nil {
 		return err
 	}
@@ -243,15 +243,15 @@ func (m *MTProto) makeAuthKey() error {
 	if err != nil {
 		return err
 	}
-	dh, ok := data.(TL_server_DH_params_ok)
+	dh, ok := data.(TlServerDHParamsOk)
 	if !ok {
-		return errors.New("Handshake: Need server_DH_params_ok")
+		return errors.New("handshake: need server_DH_params_ok")
 	}
 	if !bytes.Equal(nonceFirst, dh.nonce) {
-		return errors.New("Handshake: Wrong nonce")
+		return errors.New("handshake: wrong nonce")
 	}
-	if !bytes.Equal(nonceServer, dh.server_nonce) {
-		return errors.New("Handshake: Wrong server_nonce")
+	if !bytes.Equal(nonceServer, dh.serverNonce) {
+		return errors.New("handshake: wrong server_nonce")
 	}
 	t1 := make([]byte, 48)
 	copy(t1[0:], nonceSecond)
@@ -279,28 +279,28 @@ func (m *MTProto) makeAuthKey() error {
 	copy(tmpAESIV[28:], nonceSecond[0:4])
 
 	// (parse-thru) server_DH_inner_data
-	decodedData, err := doAES256IGEdecrypt(dh.encrypted_answer, tmpAESKey, tmpAESIV)
+	decodedData, err := doAES256IGEDecrypt(dh.encryptedAnswer, tmpAESKey, tmpAESIV)
 	if err != nil {
 		return err
 	}
-	innerbuf := NewDecodeBuf(decodedData[20:])
-	data = innerbuf.Object()
-	if innerbuf.err != nil {
-		return innerbuf.err
+	innerBuf := NewDecodeBuf(decodedData[20:])
+	data = innerBuf.Object()
+	if innerBuf.err != nil {
+		return innerBuf.err
 	}
-	dhi, ok := data.(TL_server_DH_inner_data)
+	dhi, ok := data.(TlServerDHInnerData)
 	if !ok {
-		return errors.New("Handshake: Need server_DH_inner_data")
+		return errors.New("handshake: need server_DH_inner_data")
 	}
 	if !bytes.Equal(nonceFirst, dhi.nonce) {
-		return errors.New("Handshake: Wrong nonce")
+		return errors.New("handshake: wrong nonce")
 	}
-	if !bytes.Equal(nonceServer, dhi.server_nonce) {
-		return errors.New("Handshake: Wrong server_nonce")
+	if !bytes.Equal(nonceServer, dhi.serverNonce) {
+		return errors.New("handshake: wrong server_nonce")
 	}
 
-	_, g_b, g_ab := makeGAB(dhi.g, dhi.g_a, dhi.dh_prime)
-	m.authKey = g_ab.Bytes()
+	_, gb, gab := makeGAB(dhi.g, dhi.gA, dhi.dhPrime)
+	m.authKey = gab.Bytes()
 	if m.authKey[0] == 0 {
 		m.authKey = m.authKey[1:]
 	}
@@ -315,14 +315,14 @@ func (m *MTProto) makeAuthKey() error {
 	xor(m.serverSalt, nonceServer[:8])
 
 	// (encoding) client_DH_inner_data
-	innerData2 := (TL_client_DH_inner_data{nonceFirst, nonceServer, 0, g_b}).encode()
+	innerData2 := (TlClientDHInnerData{nonceFirst, nonceServer, 0, gb}).encode()
 	x = make([]byte, 20+len(innerData2)+(16-((20+len(innerData2))%16))&15)
 	copy(x[0:], sha1(innerData2))
 	copy(x[20:], innerData2)
-	encryptedData2, err := doAES256IGEencrypt(x, tmpAESKey, tmpAESIV)
+	encryptedData2, err := doAES256IGEEncrypt(x, tmpAESKey, tmpAESIV)
 
 	// (send) set_client_DH_params
-	err = m.sendPacket(TL_set_client_DH_params{nonceFirst, nonceServer, encryptedData2}, nil)
+	err = m.sendPacket(TlSetClientDHParams{nonceFirst, nonceServer, encryptedData2}, nil)
 	if err != nil {
 		return err
 	}
@@ -332,18 +332,18 @@ func (m *MTProto) makeAuthKey() error {
 	if err != nil {
 		return err
 	}
-	dhg, ok := data.(TL_dh_gen_ok)
+	dhg, ok := data.(TlDHGenOk)
 	if !ok {
-		return errors.New("Handshake: Need dh_gen_ok")
+		return errors.New("handshake: need dh_gen_ok")
 	}
 	if !bytes.Equal(nonceFirst, dhg.nonce) {
-		return errors.New("Handshake: Wrong nonce")
+		return errors.New("handshake: wrong nonce")
 	}
-	if !bytes.Equal(nonceServer, dhg.server_nonce) {
-		return errors.New("Handshake: Wrong server_nonce")
+	if !bytes.Equal(nonceServer, dhg.serverNonce) {
+		return errors.New("handshake: wrong server_nonce")
 	}
-	if !bytes.Equal(nonceHash1, dhg.new_nonce_hash1) {
-		return errors.New("Handshake: Wrong new_nonce_hash1")
+	if !bytes.Equal(nonceHash1, dhg.newNonceHash1) {
+		return errors.New("handshake: wrong new_nonce_hash1")
 	}
 
 	// (all ok)
