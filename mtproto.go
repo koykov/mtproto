@@ -204,7 +204,7 @@ func (m *MTProto) AuthSendCode(phoneNumber string) (*TLAuthSentCode, error) {
 			authSentCode = x.(TLAuthSentCode)
 			flag = false
 		case TLAuthSentAppCode:
-			authSentAppCode := x.(TLAuthSentCode)
+			authSentAppCode := x.(TLAuthSentAppCode)
 			authSentCode.PhoneRegistered = authSentAppCode.PhoneRegistered
 			authSentCode.PhoneCodeHash = authSentAppCode.PhoneCodeHash
 			authSentCode.SendCallTimeout = authSentAppCode.SendCallTimeout
